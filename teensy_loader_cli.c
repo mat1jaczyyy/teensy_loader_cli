@@ -370,8 +370,7 @@ int soft_reboot(void)
 // http://msdn.microsoft.com/en-us/library/ms790932.aspx
 #include <windows.h>
 #include <setupapi.h>
-#include <ddk/hidsdi.h>
-#include <ddk/hidclass.h>
+#include <hidsdi.h>
 
 HANDLE open_usb_device(int vid, int pid)
 {
@@ -438,7 +437,9 @@ int write_usb_device(HANDLE h, void *buf, int len, int timeout)
 		event = CreateEvent(NULL, TRUE, TRUE, NULL);
 		if (!event) return 0;
 	}
-	ResetEvent(&event);
+	// Reset the event handle itself before each overlapped HID write.
+	// Passing &event can make pending Teensy 4.x writes fail immediately.
+	ResetEvent(event);
 	memset(&ov, 0, sizeof(ov));
 	ov.hEvent = event;
 	tmpbuf[0] = 0;
